@@ -1,7 +1,11 @@
 # ignore Mac DS file
 .DS_Store
+
 # model results folder
 modelResults/
+
+# ignore additional scripts for processing
+./Scripts
 
 # PyCharm Directory
 .idea/

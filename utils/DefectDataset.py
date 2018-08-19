@@ -8,7 +8,7 @@ import warnings
 
 #root = '/home/wei/Data/Loop_detection/'
 root = '/srv/home/dwu93/data/loop111'
-root2 = './data/Data3TypesYminXminYmaxXmax'
+root2 = './data/Data3TypesYminXminYmaxXmax2'
 
 class DefectDetectionDataset(chainer.dataset.DatasetMixin):
     """Base class for defect defection dataset

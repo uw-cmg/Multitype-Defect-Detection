@@ -34,13 +34,21 @@ def evaluate_set_by_centroid(model, dataset, threshold=0.5, use_gpu=True):
     return recall_list, precision_list
 
 
-def evaluate_set_by_centroid_kind(model, dataset, threshold=0.5, use_gpu=True):
+def evaluate_set_by_centroid_kind(model,bbox_label_names, dataset, threshold=0.5, use_gpu=True):
     model.score_thresh = threshold
+    recall_list_by_kind = dict()
+    precision_list_by_kind = dict()
+    # create all the P and R list by kind of defect types
+    for label_names in bbox_label_names:
+        recall_list_by_kind[label_names] = []
+        precision_list_by_kind[label_names] = []
+    # loop though the data
     recall_list = []
     precision_list = []
     for instance in dataset:
-        img, gt_bbox, _ = instance
-        pred_bbox, _, _ = model.predict([img])
+        img, gt_bbox, gt_label = instance
+        pred_bbox, pred_label, pred_prob = model.predict([img])
+        #print(pred_label)
         recall, precision = compute_score_by_centroid(pred_bbox[0], gt_bbox)
         recall_list.append(recall)
         precision_list.append(precision)
