@@ -6,6 +6,7 @@ modelResults/
 
 # ignore additional scripts for processing
 ./Scripts
+./OldTrainingsArchive
 
 # PyCharm Directory
 .idea/
