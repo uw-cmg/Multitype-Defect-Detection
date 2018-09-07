@@ -87,8 +87,7 @@ if __name__ == '__main__':
     # Plot the distribution of Major axis and Minor axis
     ratioDFDict = dict()
     for key in txtDFDict.keys():
-        #ratioDF = csvDFDict[key+"_result"]["Major"] / csvDFDict[key+"_result"]["Minor"]
-        ratioDF = pd.concat([txtDFDict[key]['labeltext'], csvDFDict[key+"_result"]["Major"] / csvDFDict[key+"_result"]["Minor"]], axis=1, keys=['labeltext', 'ratios'])
+        ratioDF = pd.concat([txtDFDict[key]['labeltext'], csvDFDict[key+"_result"]["Major"] / csvDFDict[key+"_result"]["Minor"],txtDFDict[key]['Ymin'],txtDFDict[key]['Xmin'],txtDFDict[key]['Ymax'],txtDFDict[key]['Xmax'],csvDFDict[key+"_result"]['Area']], axis=1, keys=['labeltext', 'ratios','Ymin', 'Xmin', 'Ymax', 'Xmax','Area'])
         ratioDFDict[key] = ratioDF
         #print(key)
 
@@ -97,13 +96,29 @@ if __name__ == '__main__':
     for key in txtDFDict.keys():
         # create color list
         colorList = list()
-        for index, row  in ratioDFDict[key].iterrows():
+        for index, row in ratioDFDict[key].iterrows():
             if row['labeltext'] == '111':
                 colorList.append('red')
             elif row['labeltext'] == '100':
                 colorList.append('green')
             else:
                 colorList.append('blue')
+
+            """
+            Automatically Checking 
+            """
+
+            # For black dots
+            # if ratio of major and minor axis > 2.0
+            # output infomation of this black dots
+            # because this may be problematic one
+            if (row['labeltext'] == 'BD') and (row['ratios'] >= 2.0):
+                print("In image %s Found larger ratio for black dots"%key)
+                print("the output format is 'row#','ratios','Ymin', 'Xmin', 'Ymax', 'Xmax'")
+                print("(top left corner, bottom right corner)")
+                print("%d %.3f %d %d %d %d" %(index,row['ratios'],row['Ymin'],row['Xmin'],row['Ymax'],row['Xmax']))
+                print("=============================")
+
 
         #print(colorList)
         fignow = plt.figure()
@@ -119,19 +134,25 @@ if __name__ == '__main__':
         fignow.savefig(key + '.png')
 
 
-    # Area
 
     # plotting and save figures
     for key in txtDFDict.keys():
         # create color list
+        # and Area lists
         colorList = list()
-        for index, row  in ratioDFDict[key].iterrows():
+        area111List = list()
+        area100List = list()
+        areaBDList = list()
+        for index, row in ratioDFDict[key].iterrows():
             if row['labeltext'] == '111':
                 colorList.append('red')
+                area111List.append(row['Area'])
             elif row['labeltext'] == '100':
                 colorList.append('green')
+                area100List.append(row['Area'])
             else:
                 colorList.append('blue')
+                areaBDList.append(row['Area'])
 
         #print(colorList)
         fignow = plt.figure()
@@ -144,7 +165,40 @@ if __name__ == '__main__':
         L.get_texts()[0].set_text('\n read for 111 \n green for 100 \n blue for bd')
         #plt.text(1,3,'read for 111 \n green for 100 \n blue for bd', fontsize=11, color='black')
         #plt.show()
-        fignow.savefig('Area_' + key  + '.png')
+        fignow.savefig('Area_' + key + '.png')
+
+        """
+        Plot histogram of area of the defects 
+        """
+
+        ## 111
+        fignow = plt.figure()
+        plt.hist(area111List, bins='auto')  # arguments are passed to np.histogram
+        plt.title(key)
+        plt.xlabel("defect size of 111 in " + key)
+        plt.ylabel("Area of defects in pixels")
+        fignow.savefig('Area_Histogram_of_111_' + key + '.png')
+
+        ## 100
+        fignow = plt.figure()
+        plt.hist(area100List, bins='auto')  # arguments are passed to np.histogram
+        plt.title(key)
+        plt.xlabel("defect size of 100 in " + key)
+        plt.ylabel("Area of defects in pixels")
+        fignow.savefig('Area_Histogram_of_100_' + key + '.png')
+
+        ## BD
+        fignow = plt.figure()
+        plt.hist(areaBDList, bins='auto')  # arguments are passed to np.histogram
+        plt.title(key)
+        plt.xlabel("defect size of black dot in " + key)
+        plt.ylabel("Area of defects in pixels")
+        fignow.savefig('Area_Histogram_of_Black_Dot_' + key + '.png')
+
+        ## close all opening figures to save memory
+        plt.close('all')
+
+
 
 
 

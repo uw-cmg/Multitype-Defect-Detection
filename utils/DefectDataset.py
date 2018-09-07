@@ -122,3 +122,42 @@ class MultiDefectDetectionDataset(chainer.dataset.DatasetMixin):
             bbs = transforms.resize_bbox(bbs, (H, W), (self.img_size, self.img_size))
 
         return img, bbs, label
+
+    def get_example_by_name(self, strImageName):
+        """Returns the image of a certain name.
+
+        Args:
+            strImageName (string): The string that represents the image name.
+
+        Returns:
+            tuple of an image and its label.
+            The image is in CHW format and its color channel is ordered in
+            RGB.
+            a bounding box is appended to the returned value.
+        """
+        fullstrImageName = strImageName + ".jpg"
+        img = utils.read_image(os.path.join(self.data_dir, 'images',fullstrImageName ),color=True)
+        # Add processing to the other two channels
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            img[1, :, :] = exposure.rescale_intensity(exposure.equalize_adapthist(
+                exposure.rescale_intensity(img[1, :, :])), out_range=(0, 255))
+            img[2, :, :] = exposure.rescale_intensity(filters.gaussian(
+                exposure.rescale_intensity(img[2, :, :])), out_range=(0, 255))
+
+        # bbs should be a matrix (m by 4). m is the number of bounding
+        # boxes in the image
+        # labels should be an integer array (m by 1). m is the same as the bbs
+
+        bbs_file = os.path.join(self.data_dir, 'bounding_boxes', strImageName + '.txt')
+
+        label_bbs = np.loadtxt(bbs_file, dtype=np.float32)
+        label = label_bbs[:, 0].astype(np.int32)
+        bbs = label_bbs[:, 1:5]
+
+        _, H, W = img.shape
+        if self.resize and (H != self.img_size or W != self.img_size):
+            img = transforms.resize(img, (self.img_size, self.img_size))
+            bbs = transforms.resize_bbox(bbs, (H, W), (self.img_size, self.img_size))
+
+        return img, bbs, label
