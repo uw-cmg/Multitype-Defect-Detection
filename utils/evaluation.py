@@ -21,7 +21,7 @@ def bbox2centroid(bboxes):
     return np.column_stack(((bboxes[:, 0] + bboxes[:, 2])/2, (bboxes[:, 1] + bboxes[:, 3])/2))
 
 
-def evaluate_set_by_centroid(model, dataset, threshold=0.5, use_gpu=True):
+def evaluate_set_by_centroid(model, dataset, threshold=0.5):
     model.score_thresh = threshold
     recall_list = []
     precision_list = []
@@ -33,25 +33,82 @@ def evaluate_set_by_centroid(model, dataset, threshold=0.5, use_gpu=True):
         precision_list.append(precision)
     return recall_list, precision_list
 
+def bbox_iou(a, b):
+    """Calculate the Intersection of Unions (IoUs) between bounding boxes.
+    IoU is calculated as a ratio of area of the intersection
+    and area of the union.
 
-def evaluate_set_by_centroid_kind(model,bbox_label_names, dataset, threshold=0.5, use_gpu=True):
+    Args:
+        a: (list of 4 numbers) [y1,x1,y2,x2]
+        b: (list of 4 numbers) [y1,x1,y2,x2]
+    Returns:
+        iou: the value of the IoU of two bboxes
+
+    """
+    # (float) Small value to prevent division by zero
+    epsilon = 1e-5
+    # COORDINATES OF THE INTERSECTION BOX
+    y1 = max(a[0], b[0])
+    x1 = max(a[1], b[1])
+    y2 = min(a[2], b[2])
+    x2 = min(a[3], b[3])
+
+    # AREA OF OVERLAP - Area where the boxes intersect
+    width = (x2 - x1)
+    height = (y2 - y1)
+    # handle case where there is NO overlap
+    if (width < 0) or (height < 0):
+        return 0.0
+    area_overlap = width * height
+
+    # COMBINED AREA
+    area_a = (a[2] - a[0]) * (a[3] - a[1])
+    area_b = (b[2] - b[0]) * (b[3] - b[1])
+    area_combined = area_a + area_b - area_overlap
+
+    # RATIO OF AREA OF OVERLAP OVER COMBINED AREA
+    iou = area_overlap / (area_combined+epsilon)
+    return iou
+
+def evaluate_set_by_iou_kinds(model, dataset, threshold=0.5,threshold_IoU = 0.5):
+    """Calculate the performance of the model by IoU metrics and different kinds of labels
+    
+    Args:
+        model: the Faster R-CNN model
+        dastaset: testing dataset
+        threshold: the threshold value used by Faster R-CNN
+    Returns:
+        
+
+    """
     model.score_thresh = threshold
-    recall_list_by_kind = dict()
-    precision_list_by_kind = dict()
-    # create all the P and R list by kind of defect types
-    for label_names in bbox_label_names:
-        recall_list_by_kind[label_names] = []
-        precision_list_by_kind[label_names] = []
-    # loop though the data
     recall_list = []
     precision_list = []
     for instance in dataset:
-        img, gt_bbox, gt_label = instance
-        pred_bbox, pred_label, pred_prob = model.predict([img])
-        #print(pred_label)
-        recall, precision = compute_score_by_centroid(pred_bbox[0], gt_bbox)
-        recall_list.append(recall)
-        precision_list.append(precision)
+        img, gt_bboxes, gt_labels = instance
+        pred_bboxes, pred_labels, pred_scores = model.predict([img])
+        #print(pred_bboxes)
+        pred_bboxes = pred_bboxes[0].tolist()
+        gt_bboxes = gt_bboxes.tolist()
+        #pred_labels = pred_labels.tolist()
+        gt_labels = gt_labels.tolist()
+        # for each predicted bbox
+        for i in range(0,len(pred_bboxes)):
+            tmpIoU_list = []
+            # go through all the gt bbox
+            for j in range(0,len(gt_bboxes)):
+                tmpIoU_list.append(bbox_iou(pred_bboxes[i],gt_bboxes[j]))
+            # After go through all the gt bbox
+            # check whether any IoU > threshold_IoU
+            tmpIoU_list_loc_true = [ x for x in tmpIoU_list if x >= threshold_IoU]
+            if len(tmpIoU_list_loc_true) >= 1:
+                # find the maximum index of this item this follows the NMS convention
+                maxpos = tmpIoU_list_loc_true.index(max(tmpIoU_list_loc_true))
+
+
+        #recall, precision = compute_score_by_centroid(pred_bbox[0], gt_bbox)
+        #recall_list.append(recall)
+        #precision_list.append(precision)
     return recall_list, precision_list
 
 
