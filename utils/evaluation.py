@@ -70,7 +70,7 @@ def bbox_iou(a, b):
     iou = area_overlap / (area_combined+epsilon)
     return iou
 
-def evaluate_set_by_iou_kinds(model, dataset, threshold=0.5,threshold_IoU = 0.5):
+def evaluate_set_by_iou_kinds(model, dataset,bbox_label_names = ('0'), threshold=0.5,threshold_IoU = 0.5):
     """Calculate the performance of the model by IoU metrics and different kinds of labels
     
     Args:
@@ -82,12 +82,16 @@ def evaluate_set_by_iou_kinds(model, dataset, threshold=0.5,threshold_IoU = 0.5)
 
     """
     model.score_thresh = threshold
-    recall_list = []
-    precision_list = []
+    correct = 0
+    cls_error = 0
+    loc_error = 0
+    gtNumDefects = np.zeros(shape=(1, len(bbox_label_names)))
+    confMatrix= np.zeros(shape=(len(bbox_label_names), len(bbox_label_names)))
+    cls_error_size_list = list()
     for instance in dataset:
         img, gt_bboxes, gt_labels = instance
         pred_bboxes, pred_labels, pred_scores = model.predict([img])
-        #print(pred_bboxes)
+        #print(pred_scores)
         pred_bboxes = pred_bboxes[0].tolist()
         gt_bboxes = gt_bboxes.tolist()
         #pred_labels = pred_labels.tolist()
@@ -103,13 +107,16 @@ def evaluate_set_by_iou_kinds(model, dataset, threshold=0.5,threshold_IoU = 0.5)
             tmpIoU_list_loc_true = [ x for x in tmpIoU_list if x >= threshold_IoU]
             if len(tmpIoU_list_loc_true) >= 1:
                 # find the maximum index of this item this follows the NMS convention
-                maxpos = tmpIoU_list_loc_true.index(max(tmpIoU_list_loc_true))
-
-
-        #recall, precision = compute_score_by_centroid(pred_bbox[0], gt_bbox)
-        #recall_list.append(recall)
-        #precision_list.append(precision)
-    return recall_list, precision_list
+                maxpos = tmpIoU_list.index(max(tmpIoU_list))
+                # if label matched
+                confMatrix[pred_labels[0][i]][gt_labels[maxpos]] += 1
+                if gt_labels[maxpos] == pred_labels[0][i]:
+                    correct += 1
+                else:
+                    cls_error += 1
+            else: # no IoU > threshold_IoU found
+                loc_error += 1
+    return correct, cls_error,loc_error,confMatrix
 
 
 def analyze_and_fitting(model, dataset, threshold=0.5, use_gpu=True):

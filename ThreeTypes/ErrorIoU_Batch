@@ -52,5 +52,10 @@ dataset_test_validation = MultiDefectDetectionDataset(data_dir=root, split='vali
 
 from utils.evaluation import evaluate_set_by_iou_kinds
 
-recalls, precisions = evaluate_set_by_iou_kinds(model,dataset_test_validation, threshold=0.005,threshold_IoU = 0.5)
+correct, cls_error,loc_error,confMatrix = evaluate_set_by_iou_kinds(model,dataset_test_validation,bbox_label_names, threshold=0.005,threshold_IoU = 0.5)
 
+print(correct)
+print(loc_error)
+print(cls_error)
+print(confMatrix)
+print("Done")
