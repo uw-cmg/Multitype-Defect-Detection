@@ -33,6 +33,16 @@ def evaluate_set_by_centroid(model, dataset, threshold=0.5):
         precision_list.append(precision)
     return recall_list, precision_list
 
+def bbox_area(bbox):
+    """Calculate the area of a bounding boxes.
+    Args:
+        bbox: (list of 4 numbers) [y1,x1,y2,x2]
+    Returns:
+        area: the area of a bbox
+    """
+    area = (bbox[3] - bbox[1])*(bbox[2] - bbox[0])
+    return area
+
 def bbox_iou(a, b):
     """Calculate the Intersection of Unions (IoUs) between bounding boxes.
     IoU is calculated as a ratio of area of the intersection
@@ -87,6 +97,7 @@ def evaluate_set_by_iou_kinds(model, dataset,bbox_label_names = ('0'), threshold
     loc_error = 0
     gtNumDefects = np.zeros(shape=(1, len(bbox_label_names)))
     confMatrix= np.zeros(shape=(len(bbox_label_names), len(bbox_label_names)))
+    area_loc_error_list = list()
     cls_error_size_list = list()
     for instance in dataset:
         img, gt_bboxes, gt_labels = instance
@@ -94,12 +105,13 @@ def evaluate_set_by_iou_kinds(model, dataset,bbox_label_names = ('0'), threshold
         #print(pred_scores)
         pred_bboxes = pred_bboxes[0].tolist()
         gt_bboxes = gt_bboxes.tolist()
+        for k in range(0,len(gt_bboxes)):
+            gtNumDefects[0,gt_labels[k]] += 1
         #pred_labels = pred_labels.tolist()
         gt_labels = gt_labels.tolist()
         # for each predicted bbox
         for i in range(0,len(pred_bboxes)):
             tmpIoU_list = []
-            # go through all the gt bbox
             for j in range(0,len(gt_bboxes)):
                 tmpIoU_list.append(bbox_iou(pred_bboxes[i],gt_bboxes[j]))
             # After go through all the gt bbox
@@ -116,7 +128,8 @@ def evaluate_set_by_iou_kinds(model, dataset,bbox_label_names = ('0'), threshold
                     cls_error += 1
             else: # no IoU > threshold_IoU found
                 loc_error += 1
-    return correct, cls_error,loc_error,confMatrix
+                area_loc_error_list.append((pred_labels[0][i],bbox_area(pred_bboxes[i])))
+    return correct, cls_error,loc_error,confMatrix,area_loc_error_list,gtNumDefects
 
 
 def analyze_and_fitting(model, dataset, threshold=0.5, use_gpu=True):
