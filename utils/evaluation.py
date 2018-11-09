@@ -88,8 +88,12 @@ def evaluate_set_by_iou_kinds(model, dataset,bbox_label_names = ('0'), threshold
         dastaset: testing dataset
         threshold: the threshold value used by Faster R-CNN
     Returns:
-        
-
+        correct : the number of correct predictions
+        cls_error : the number of classification errors
+        loc_error : the number of location errors
+        confMatrix : the confusion matrix of classification errors
+        area_loc_error_list : the pixel area of location error bbox
+        gtNumDefects : the number of ground truth bbox for each type defects
     """
     model.score_thresh = threshold
     correct = 0
