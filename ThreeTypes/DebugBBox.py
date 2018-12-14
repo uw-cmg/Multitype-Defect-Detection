@@ -13,6 +13,7 @@ import math
 from chainercv import utils
 import matplotlib.pyplot as plt
 import time
+import shutil
 
 #load Data
 root = '../data/3Types/Data3TypesYminXminYmaxXmax5'
@@ -42,14 +43,12 @@ bbox_label_names = ('111loop', 'dot', '100loop')
 
 from utils.evaluation import evaluate_set_by_centroid
 
-# Using Validation Set
-dataset_test_validation = MultiDefectDetectionDataset(data_dir=root, split='validation')
 
 # plot both original image and gt image
-
-img, bbs, lbs = dataset_test_validation[1]
-
-fig = plt.figure(figsize=(15,6))
+imgInx = 0
+img, gt_bbs, gt_lbs = dataset_valid[imgInx]
+dataset_valid.copy_example_image(imgInx)
+fig = plt.figure(figsize=(10,6))
 ax1 = fig.add_subplot(1, 1, 1)
 
 img = img.transpose((1, 2, 0))[:, :, 0]
@@ -57,7 +56,24 @@ ax1.imshow(img, cmap='gray')
 figName = "original_" + time.strftime("%Y%m%d_%H%M%S") + ".jpg"
 fig.savefig(figName)
 
+from utils.outputUtil import output_gt_bbox
+gt_bboxes = gt_bbs.tolist()
+gt_labels = gt_lbs.tolist()
 
+output_gt_bbox(gt_bboxes,gt_labels,"gt")
+
+# re-read data
+img, gt_bbs, gt_lbs = dataset_valid[imgInx]
+model.score_thresh = 0.25
+pred_bbs, pred_lbs, pred_scores = model.predict([img])
+
+pred_bboxes = pred_bbs[0].tolist()
+pred_labels = pred_lbs[0]
+
+output_gt_bbox(pred_bboxes,pred_labels,"pred")
+
+
+print("Done")
 
 # print("Average recall ", sum(recalls)/len(recalls))
 # print("Average precision ", sum(precisions)/len(precisions))
@@ -65,49 +81,38 @@ fig.savefig(figName)
 # p = sum(precisions)/len(precisions)
 # print("Average F1", 2 * r * p / (r + p))
 
-from utils.evaluation import evaluate_set_by_iou_kinds
-
-correct, cls_error,loc_error,confMatrix,area_loc_error_list,gtNumDefects = evaluate_set_by_iou_kinds(model,dataset_test_validation,bbox_label_names, threshold=0.25, threshold_IoU = 0.9)
-
-print(correct)
-print(loc_error)
-print(cls_error)
-print(confMatrix)
-#print(area_loc_error_list)
-print(gtNumDefects)
-#plt.hist(area_loc_area_list,bins=500)
-#plt.savefig("newList.png")
-import csv
 
 
-precision = 1.0 * correct / (loc_error + cls_error + correct)
-recall = 1.0 * correct/(np.sum(gtNumDefects))
-F1 = 2.0 * recall * precision / (recall + precision)
-
-print("============ Performance ==============")
-print("P : %f" % precision)
-print("R : %f" % recall)
-print("F1 : %f" % F1)
-print("============ Performance ==============")
-
-csvFileName = "area.csv" + time.strftime("%Y%m%d_%H%M%S")
-with open(csvFileName, 'w') as myfile:
-    for i, (label, area) in enumerate(area_loc_error_list):
-        myfile.write("%s,%s \n" %(label, area))
-
-# Plot Histogram of location error
-import pandas as pd
-areaDF = pd.DataFrame(columns=['classlabel','area'])
-
-for i, (classlabel, area) in enumerate(area_loc_error_list):
-    areaDF.loc[i] = [classlabel, area]
-
-import matplotlib.pyplot as plt
-
-histgramFileName = "Hist_" + time.strftime("%Y%m%d_%H%M%S")
-fig = plt.figure(figsize=(15,6))
-fig, ax = plt.subplots(1,2)
-areaDF.hist(bins=50, ax=ax)
-fig.savefig(histgramFileName)
-
-print("Done")
+# correct, cls_error,loc_error,confMatrix,area_loc_error_list,gtNumDefects = evaluate_set_by_iou_kinds(model,dataset_test_validation,bbox_label_names, threshold=0.25, threshold_IoU = 0.9)
+#
+#
+#
+# precision = 1.0 * correct / (loc_error + cls_error + correct)
+# recall = 1.0 * correct/(np.sum(gtNumDefects))
+# F1 = 2.0 * recall * precision / (recall + precision)
+#
+# print("============ Performance ==============")
+# print("P : %f" % precision)
+# print("R : %f" % recall)
+# print("F1 : %f" % F1)
+# print("============ Performance ==============")
+#
+# csvFileName = "area.csv" + time.strftime("%Y%m%d_%H%M%S")
+# with open(csvFileName, 'w') as myfile:
+#     for i, (label, area) in enumerate(area_loc_error_list):
+#         myfile.write("%s,%s \n" %(label, area))
+#
+# # Plot Histogram of location error
+# import pandas as pd
+# areaDF = pd.DataFrame(columns=['classlabel','area'])
+#
+# for i, (classlabel, area) in enumerate(area_loc_error_list):
+#     areaDF.loc[i] = [classlabel, area]
+#
+# import matplotlib.pyplot as plt
+#
+# histgramFileName = "Hist_" + time.strftime("%Y%m%d_%H%M%S")
+# fig = plt.figure(figsize=(15,6))
+# fig, ax = plt.subplots(1,2)
+# areaDF.hist(bins=50, ax=ax)
+# fig.savefig(histgramFileName)

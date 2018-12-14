@@ -5,9 +5,8 @@
 modelResults/
 
 # ignore additional scripts for processing
-./Scripts
-./OldTrainingsArchive
 
+.gitignore
 # PyCharm Directory
 .idea/
 
@@ -120,3 +119,4 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+/Archive/*

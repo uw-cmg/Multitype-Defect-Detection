@@ -95,6 +95,7 @@ class MultiDefectDetectionDataset(chainer.dataset.DatasetMixin):
             RGB.
             a bounding box is appended to the returned value.
         """
+        #print("The image file name is %s"%self.images[i][0:-4])
         img = utils.read_image(
             os.path.join(self.data_dir, 'images', self.images[i]),
             color=True)
@@ -161,3 +162,16 @@ class MultiDefectDetectionDataset(chainer.dataset.DatasetMixin):
             bbs = transforms.resize_bbox(bbs, (H, W), (self.img_size, self.img_size))
 
         return img, bbs, label
+
+    def copy_example_image(self, i):
+        """Copy the i-th example JPG image.
+
+        Args:
+            i (int): The index of the example.
+
+        Returns:
+            None
+        """
+        #print("The image file name is %s"%self.images[i][0:-4])
+        from shutil import copy
+        copy(os.path.join(self.data_dir, 'images', self.images[i]),'.')
