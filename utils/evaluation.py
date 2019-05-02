@@ -160,7 +160,6 @@ def evaluate_set_by_defect_size(model, dataset, threshold=0.5, num_bins=20, size
     for instance in dataset:
         img, gt_bbox, _ = instance
         pred_bbox, _, _ = model.predict([img])
-        # TODO: Currently We use bounding box to represent the size for speed considerations.
         # Later we will use actual size. (i.e. rewrite get_bbox_sz method)
         gt_sz = get_bbox_sz(gt_bbox)
         pred_sz = get_bbox_sz(pred_bbox[0])

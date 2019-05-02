@@ -65,7 +65,9 @@ def vis_bbox(img, bbox, label=None, score=None, label_names=None, ax=None):
         Returns the Axes object with the plot for further tweaking.
 
     """
-    from matplotlib import pyplot as plot
+    #from matplotlib import pyplot as plot
+    import matplotlib.pyplot as plt
+    plt.axis('off')
 
     if label is not None and not len(bbox) == len(label):
         raise ValueError('The length of label must be same as that of bbox')
@@ -85,7 +87,7 @@ def vis_bbox(img, bbox, label=None, score=None, label_names=None, ax=None):
         xy = (bb[1], bb[0])
         height = bb[2] - bb[0]
         width = bb[3] - bb[1]
-        ax.add_patch(plot.Rectangle(
+        ax.add_patch(plt.Rectangle(
             xy, width, height, fill=False, edgecolor=edgeColorDict[label_names[label[i]]], linewidth=3))
 
         caption = list()

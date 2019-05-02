@@ -60,6 +60,8 @@ def showImage(img):
     plt.imshow(img.transpose((1, 2, 0))[:, :, 0], cmap='gray')
 
 
+
+
 def get_bbox_sz(bbox):
     """
     return the size of the bounding boxes
