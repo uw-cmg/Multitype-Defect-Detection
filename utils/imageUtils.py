@@ -21,7 +21,7 @@ def cropImage(img, bboxes, expand=True):
 
     if expand:
         _, H, W = img.shape
-        bboxes = expand_bbox(bboxes, H, W)
+        bboxes = expand_bbox_with_rate(bboxes, H, W, rate=0.2)#expand_bbox(bboxes, H, W)
 
     subimages = list()
     for bbox in bboxes:
@@ -50,6 +50,26 @@ def expand_bbox(bbox, H, W):
 
     return new_bbox
 
+def expand_bbox_with_rate(bbox, H, W, rate=0.15):
+    """
+    expand the bounding box within the range of height and width of the image
+    :param bbox: numpy.ndarray bounding box N by 4
+    :param H: int Height of the image
+    :param W: int Width of the image
+    :param rate: double Rate to enlarge the BBox
+    :return: numpy.ndarray expanded bounding box
+    """
+    b_height = rate*(bbox[:, 2] - bbox[:, 0])
+    b_width = rate*(bbox[:, 3] - bbox[:, 1])
+    b_height[b_height < 7] = 7
+    b_width[b_width < 7] = 7
+    adjust = np.array((-b_height, -b_width, b_height, b_width)).transpose()
+    new_bbox = bbox + adjust
+    new_bbox[new_bbox < 0] = 0
+    new_bbox[new_bbox[:, 2] >= H, 2] = H - 1
+    new_bbox[new_bbox[:, 3] >= W, 3] = W - 1
+
+    return new_bbox
 
 def showImage(img):
     """
@@ -70,3 +90,11 @@ def get_bbox_sz(bbox):
     """
     return (bbox[:, 2]+bbox[:, 3] - bbox[:, 0] - bbox[:, 1]) / 2
 
+def saveImage(img,fname):
+    """
+    :param img (numpy.ndarray): image in CHW format
+    :return: plot the red channel in grayscale color map
+    """
+    plt.imshow(img.transpose((1, 2, 0))[:, :, 0], cmap='gray')
+    plt.axis('off')
+    plt.savefig(fname,dpi=150,bbox_inches='tight')

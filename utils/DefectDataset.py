@@ -6,7 +6,6 @@ from chainercv import utils
 from chainercv import transforms
 import warnings
 
-#root = '/home/wei/Data/Loop_detection/'
 root = '/srv/home/dwu93/data/loop111'
 root2 = './data/Data3TypesYminXminYmaxXmax2'
 
@@ -101,6 +100,7 @@ class MultiDefectDetectionDataset(chainer.dataset.DatasetMixin):
             color=True)
         # Add processing to the other two channels
         with warnings.catch_warnings():
+            # print("read in by expanding")
             warnings.simplefilter("ignore")
             img[1, :, :] = exposure.rescale_intensity(exposure.equalize_adapthist(
                 exposure.rescale_intensity(img[1, :, :])), out_range=(0, 255))
@@ -175,3 +175,18 @@ class MultiDefectDetectionDataset(chainer.dataset.DatasetMixin):
         #print("The image file name is %s"%self.images[i][0:-4])
         from shutil import copy
         copy(os.path.join(self.data_dir, 'images', self.images[i]),'.')
+<<<<<<< HEAD
+
+    def get_image_name(self, i):
+        """Return the i-th example JPG image name.
+
+        Args:
+            i (int): The index of the example.
+
+        Returns:
+            None
+        """
+        #print("The image file name is %s"%self.images[i][0:-4])
+        return self.images[i][0:-4]
+=======
+>>>>>>> 11523272183bfa4166cae2d6e8f88181519fa603
