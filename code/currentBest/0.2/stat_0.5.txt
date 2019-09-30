@@ -1,0 +1,13 @@
+correct prediction : 749
+location error : 196
+classification error : 98
+confusion matrix : 
+[[222.  17.  13.]
+ [ 17. 370.   7.]
+ [ 35.   9. 157.]]
+ground truth data : [[353. 589. 233.]]
+============ Performance ==============
+P : 0.718121 
+R : 0.637447 
+F1 : 0.675383 
+============ Performance ==============

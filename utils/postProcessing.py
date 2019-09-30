@@ -4,7 +4,6 @@ from skimage import exposure, morphology, measure, draw
 from skimage.filters import threshold_yen, threshold_minimum, threshold_otsu, gaussian, threshold_adaptive
 from skimage.measure import label,find_contours
 from skimage.filters import rank
-<<<<<<< HEAD
 from skimage.filters import median
 from scipy import ndimage
 from skimage.morphology import disk
@@ -14,14 +13,14 @@ from skimage.morphology import remove_small_objects,closing
 from matplotlib.patches import Ellipse
 # from utils.postProcessing import img_ellipse_fitting, flood_fitting, binary_threshold_fitting
 import os
-=======
+
 from skimage.morphology import disk
 from .visualization import vis_image
 from utils.imageUtils import cropImage
 from skimage import exposure, morphology, measure, draw
 from skimage.morphology import remove_small_objects,closing
 # from utils.postProcessing import img_ellipse_fitting, flood_fitting, binary_threshold_fitting
->>>>>>> 11523272183bfa4166cae2d6e8f88181519fa603
+
 import numpy as np
 import matplotlib.pyplot as plt
 import math
@@ -67,113 +66,6 @@ def watershed_image(img):
 
     return labels
 
-<<<<<<< HEAD
-# def watershed_image_100_openCV(img):
-#     """
-#     use watershed flooding algorithm to extract the loop contour
-#     :param img: type(numpy.ndarray) image in CHW format
-#     :return: type(numpy.ndarray) image in HW format
-#     """
-#     img_gray = img[1,:,:]
-#     img = cv2.medianBlur(img, 25)
-#     gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
-#     ret, thresh = cv2.threshold(gray,80,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C )
-#     # noise removal
-#     kernel = np.ones((4,4),np.uint8)
-#     opening = cv2.morphologyEx(thresh,cv2.MORPH_OPEN,kernel, iterations = 5)
-#     # sure background area
-#     sure_bg = cv2.dilate(opening,kernel,iterations=3)
-#     plt.imshow(sure_bg)
-#     # Finding sure foreground area
-#     dist_transform = cv2.distanceTransform(opening,1,5)
-#     ret, sure_fg = cv2.threshold(dist_transform, 0.4*dist_transform.max(),255,0)
-#     # Finding unknown region
-#     sure_fg = np.uint8(sure_fg)
-#     unknown = cv2.subtract(sure_bg,sure_fg)
-#     # Marker labelling
-#     ret, markers = cv2.connectedComponents(sure_fg)
-#     # Add one to all labels so that sure background is not 0, but 1
-#     markers = markers+1
-#     # Now, mark the region of unknown with zero
-#     markers[unknown==255] = 0
-#     markers = cv2.watershed(img,markers)
-#     img[markers == -1] = [255,0,0]
-
-#     h, w = img_gray.shape
-#     img1 = exposure.equalize_hist(img_gray)
-#     # invert the image
-#     img2 = np.max(img1) - img1
-#     img2 = ndimage.median_filter(img2, 5)
-#     inner = np.zeros((h, w), np.bool)
-#     centroid = [round(a) for a in findCentroid(img2)]
-#     inner[ int(centroid[0]), int(centroid[1])] = 1
-#     min_size = round((h + w) / 10 )
-#     kernel = morphology.disk(min_size)
-#     inner = morphology.dilation(inner, kernel)
-
-#     out = np.zeros((h,w), np.bool)
-#     out[0, 0] = 1
-#     out[h - 1, 0] = 1
-#     out[0, w - 1] = 1
-#     out[h - 1, w - 1] = 1
-#     out = morphology.dilation(out, kernel)
-#     out[0, :] = 1
-#     out[h - 1, :] = 1
-#     #out[:, w - 1] = 1
-#     #out[:, 0] = 1
-
-#     markers = np.zeros((h, w), np.int)
-#     markers[inner] = 2
-#     markers[out] = 1
-
-#     labels = morphology.watershed(img2, markers)
-
-#     return labels
-
-def flood_Fitting_100_openCV(img):
-    # Save img and read in to avoid OpenCV format problem
-    fig = plt.figure()
-    ax = fig.add_subplot(1, 1, 1)
-    # CHW -> HWC
-    img = img.transpose((1, 2, 0))[:, :, 0]
-    ax.imshow(img.astype(np.uint8), cmap='gray')
-    fig.savefig('tmp.jpg')
-    img = cv2.imread('tmp.jpg')
-    gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
-    img = cv2.medianBlur(img, 15)
-    ret, thresh = cv2.threshold(gray,80,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C)
-    # noise removal
-    kernel = np.ones((4,4),np.uint8)
-    opening = cv2.morphologyEx(thresh,cv2.MORPH_OPEN,kernel, iterations = 5)
-    # sure background area
-    sure_bg = cv2.dilate(opening,kernel,iterations=3)
-    #plt.imshow(sure_bg)
-    # Finding sure foreground area
-    dist_transform = cv2.distanceTransform(opening,1,5)
-    ret, sure_fg = cv2.threshold(dist_transform, 0.6*dist_transform.max(),255,0)
-    # Finding unknown region
-    sure_fg = np.uint8(sure_fg)
-    unknown = cv2.subtract(sure_bg,sure_fg)
-    # Marker labelling
-    ret, markers = cv2.connectedComponents(sure_fg)
-    # Add one to all labels so that sure background is not 0, but 1
-    markers = markers+1
-    # Now, mark the region of unknown with zero
-    markers[unknown==255] = 0
-    markers = cv2.watershed(img,markers)
-    #img[markers == -1] = [255,0,0]
-    ### End of OpenCV
-    # labels = watershed_image_100(img)
-    results = measure.regionprops(markers)
-    sorted(results, key=lambda k: k['area'],reverse=True)
-    if len(results) >= 2:
-        return results[1]
-    else:
-        return results[0]
-
-
-=======
->>>>>>> 11523272183bfa4166cae2d6e8f88181519fa603
 def watershed_image_100(img):
     """
     use watershed flooding algorithm to extract the loop contour
@@ -185,19 +77,12 @@ def watershed_image_100(img):
     img1 = exposure.equalize_hist(img_gray)
     # invert the image
     img2 = np.max(img1) - img1
-<<<<<<< HEAD
     img2 = median(img2)
     #img2 = ndimage.gaussian_filter(img2,0.2) #median_filter(img2, 50)
     inner = np.zeros((h, w), np.bool)
     centroid = [round(a) for a in findCentroid(img2)]
     inner[ int(centroid[0]), int(centroid[1])] = 1
     min_size = round((h + w) / 10 )
-=======
-    inner = np.zeros((h, w), np.bool)
-    centroid = [round(a) for a in findCentroid(img2)]
-    inner[centroid[0], centroid[1]] = 1
-    min_size = round((h + w) / 6 )
->>>>>>> 11523272183bfa4166cae2d6e8f88181519fa603
     kernel = morphology.disk(min_size)
     inner = morphology.dilation(inner, kernel)
 
@@ -207,13 +92,8 @@ def watershed_image_100(img):
     out[0, w - 1] = 1
     out[h - 1, w - 1] = 1
     out = morphology.dilation(out, kernel)
-<<<<<<< HEAD
     #out[0, :] = 1
     #out[h - 1, :] = 1
-=======
-    out[0, :] = 1
-    out[h - 1, :] = 1
->>>>>>> 11523272183bfa4166cae2d6e8f88181519fa603
     #out[:, w - 1] = 1
     #out[:, 0] = 1
 
@@ -238,13 +118,11 @@ def flood_fitting_100(img):
     results = measure.regionprops(labels - 1)
     sorted(results, key=lambda k: k['area'],reverse=True)
     # return the one with largest area
-<<<<<<< HEAD
     # if len(results) == 1:
     #     return results[0]
     # else:
     #     return results[1]
-=======
->>>>>>> 11523272183bfa4166cae2d6e8f88181519fa603
+
     return results[0]
 
 
@@ -260,12 +138,8 @@ def watershed_image_blackdot(img):
     # invert the image
     img2 = np.max(img1) - img1
     inner = np.zeros((h, w), np.bool)
-    centroid = [round(a) for a in findCentroid(img2)]
-<<<<<<< HEAD
-    inner[ int(centroid[0]), int(centroid[1])] = 1
-=======
-    inner[centroid[0], centroid[1]] = 1
->>>>>>> 11523272183bfa4166cae2d6e8f88181519fa603
+    # centroid = [round(a) for a in findCentroid(img2)]
+    # inner[ int(centroid[0]), int(centroid[1])] = 1
     min_size = round((h + w) / 4 )
     kernel = morphology.disk(min_size)
     inner = morphology.binary_dilation(inner, kernel)
@@ -391,19 +265,6 @@ def binary_threshold_fitting_100(image):
     # minimum threshold
     img_gray = image[1, :, :]
     h, w = img_gray.shape
-<<<<<<< HEAD
-    img0 = ndimage.median_filter(img_gray, 5)
-    #img0 = median(, disk(5))
-    img1 = exposure.equalize_hist(img0)
-    block_size = 11
-    binary= threshold_adaptive(img1, block_size)
-
-    label_img = label(binary,connectivity=5)
-    results = measure.regionprops(label_img)
-    sorted(results, key=lambda k: k['area'], reverse=True)
-    # return the one with largest area
-    print(results[0])
-=======
     img1 = exposure.equalize_hist(img_gray)
     # invert the image
     # img2 = np.max(img1) - img1
@@ -452,7 +313,6 @@ def binary_threshold_fitting_100(image):
     # Fit the Ellipse
     sorted(results, key=lambda k: k['area'], reverse=True)
     # return the one with largest area
->>>>>>> 11523272183bfa4166cae2d6e8f88181519fa603
     return results[0]
     #return FitEllipseAndParameters(Xlist,Ylist)
 
@@ -690,7 +550,6 @@ def img_ellipse_fitting_3kinds_stat(img, bboxes, labels, Results):
     plt.scatter(x_points_1, y_points_1, s=(1 * 72. / fig.dpi) ** 2, alpha=0.5, c='b')
     plt.scatter(x_points_2, y_points_2, s=(1 * 72. / fig.dpi) ** 2, alpha=0.5, c='y')
 
-<<<<<<< HEAD
 def img_ellipse_fitting_3kinds_stat_convert(img, bboxes, labels, convFactor,index, Results):
     imageSize = img[0, :, :]
     subimages, bboxes = cropImage(img, bboxes)
@@ -819,8 +678,6 @@ def img_ellipse_fitting_3kinds_stat_convert(img, bboxes, labels, convFactor,inde
         ax.add_patch(p)
     plt.savefig(str(index)+".jpg",dpi=150,bbox_inches='tight')
     plt.clf()
-=======
->>>>>>> 11523272183bfa4166cae2d6e8f88181519fa603
 
 def img_ellipse_fitting_3kinds_Fig3(img, bboxes, labels, ax = None):
     imageSize = img[0, :, :]
@@ -900,7 +757,6 @@ def img_ellipse_fitting_3kinds_Fig3(img, bboxes, labels, ax = None):
     ax.scatter(x_points_0, y_points_0, s=1, alpha=0.5, c='r')
     ax.scatter(x_points_1, y_points_1, s=1, alpha=0.5, c='b')
     ax.scatter(x_points_2, y_points_2, s=1, alpha=0.5, c='y')
-<<<<<<< HEAD
     return ax
 
 def img_ellipse_fitting_3kinds_stat_convert_debug_OutPut(img, bboxes, labels, convFactor,index, Results):
@@ -1170,6 +1026,3 @@ def img_ellipse_fitting_3kinds_stat_convert_debug_OutPut_OpenCV(img, bboxes, lab
         ax.add_patch(p)
     plt.savefig(str(index)+".jpg",dpi=150,bbox_inches='tight')
     plt.clf()
-=======
-    return ax
->>>>>>> 11523272183bfa4166cae2d6e8f88181519fa603

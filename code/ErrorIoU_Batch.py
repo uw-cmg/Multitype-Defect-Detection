@@ -1,7 +1,4 @@
 # print(os.getcwd())
-# # import os
-# # os.getcwd()
-# os.chdir("..")
 # os.chdir("..")
 # print(os.getcwd())
 
@@ -23,7 +20,7 @@ import time
 
 
 #load Data
-root = './data/3Types/Data3TypesYminXminYmaxXmax9'
+root = '../data/3Types/Data3TypesYminXminYmaxXmax10'
 dataset = MultiDefectDetectionDataset(data_dir=root, split='train')
 #dataset_test = MultiDefectDetectionDataset(data_dir=root, split='test')
 dataset_test = MultiDefectDetectionDataset(data_dir=root, split='validation2')
@@ -49,7 +46,11 @@ use_gpu = False
 
 #Higher NMS
 proposal_params = {'min_size': 4,'nms_thresh':0.8}
-model = FasterRCNNVGG16(n_fg_class=3, pretrained_model='./modelResults/snapshot_model_510000_higherNMS.npz', ratios=[ 0.5, 1, 1.5, 2, 2.5, 4,8,16],anchor_scales=[1, 4, 8, 16], min_size=1024, max_size=1024,proposal_creator_params=proposal_params)
+model = FasterRCNNVGG16(n_fg_class=3, pretrained_model='../modelResults/snapshot_model_610000_0p2NMSTheta_20190127.npz', ratios=[ 0.5, 1, 1.5, 2, 2.5, 4,8,16],anchor_scales=[1, 4, 8, 16], min_size=1024, max_size=1024,proposal_creator_params=proposal_params)
+
+# pretrained_model='../BestWeightPerformance/BestWeight_20190702.npz'
+
+#model = FasterRCNNVGG16(n_fg_class=3, pretrained_model='./modelResults/snapshot_model_510000_higherNMS.npz', ratios=[ 0.5, 1, 1.5, 2, 2.5, 4,8,16],anchor_scales=[1, 4, 8, 16], min_size=1024, max_size=1024,proposal_creator_params=proposal_params)
 
 #####################################################################
 # proposal_params = {'min_size': 8,'nms_thresh':0.4}
@@ -91,8 +92,8 @@ from utils.evaluation import evaluate_set_by_centroid
 from utils.evaluation import evaluate_set_by_iou_kinds
 
 thetaList = [0.001,0.005,0.01,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6]
-IoUList = [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]
-
+#IoUList = [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]
+IoUList = [0.4]
 
 for iou_i in IoUList:
     os.mkdir(str(iou_i))
