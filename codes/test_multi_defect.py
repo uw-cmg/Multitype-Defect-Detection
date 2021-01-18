@@ -8,19 +8,19 @@ import os
 from chainercv.links import FasterRCNNVGG16
 from chainercv.visualizations import vis_bbox
 from chainercv.utils import write_image
+from utils.evaluation import evaluate_set_by_iou_kinds
 import chainer
 import math
 from chainercv import utils
 import matplotlib.pyplot as plt
-plt.switch_backend('agg')
 import time
 
 
 #load Data
-root = '../../../Data3TypesYminXminYmaxXmax'
-dataset = MultiDefectDetectionDataset(data_dir=root, split='train')
-#dataset_test = MultiDefectDetectionDataset(data_dir=root, split='test')
-dataset_test = MultiDefectDetectionDataset(data_dir=root, split='validation')
+root = '../data/3Types/Data3TypesYminXminYmaxXmax'
+#print(os.listdir(root))
+dataset_test = MultiDefectDetectionDataset(data_dir=root, split='validation2')
+
 bbox_label_names = ('111', 'dot','100')
 
 # DataSet Statistics
@@ -29,22 +29,16 @@ print('total number of test images: ', len(dataset_test))
 print('type of defects: ', bbox_label_names)
 
 # predict figures using new methods
-use_gpu = True 
+use_gpu = False#True
 
-#Higher NMS
-proposal_params = {'min_size': 8,'nms_thresh': 0.7}
-model = FasterRCNNVGG16(n_fg_class=3, pretrained_model='../../../modelResults/snapshot_model_test.npz', ratios=[ 0.5, 1, 1.5, 2, 2.5, 4,8,16],anchor_scales=[1, 4, 8, 16], min_size=1024, max_size=1024,proposal_creator_params=proposal_params)
+proposal_params = {'min_size': 8,'nms_thresh': 0.5}
+model = FasterRCNNVGG16(n_fg_class=3, pretrained_model='../BestWeight.npz', ratios=[ 0.5, 1, 1.5, 2, 2.5, 4,8,16],anchor_scales=[1, 4, 8, 16], min_size=1024, max_size=1024,proposal_creator_params=proposal_params)
 
 if use_gpu:
     chainer.cuda.get_device_from_id(0).use()
     model.to_gpu()
 
 bbox_label_names = ('111loop', 'dot', '100loop')
-
-from utils.evaluation import evaluate_set_by_centroid
-
-# Using TestSet
-from utils.evaluation import evaluate_set_by_iou_kinds
 
 thetaList = [0.001,0.005,0.01,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6]
 IoUList = [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]
@@ -57,15 +51,11 @@ for iou_i in IoUList:
     F1list = []
     for theta_i in thetaList:
         print("Processing theta %s"%theta_i)
-        correct, cls_error,loc_error,confMatrix,area_loc_error_list,gtNumDefects = evaluate_set_by_iou_kinds(model, dataset_test,bbox_label_names, threshold=theta_i, threshold_IoU = iou_i)
+        correct, cls_error, confMatrix, gtNumDefects, predNumDefects = evaluate_set_by_iou_kinds(model, dataset_test,bbox_label_names, threshold=theta_i, threshold_IoU = iou_i)
         statTXTname = str(iou_i) + "/stat_" + str(theta_i) + ".txt"
         with open(statTXTname, 'w') as statfile:
             statfile.write("correct prediction : ")
             statfile.write( str(correct))
-            statfile.write("\n")
-
-            statfile.write("location error : ")
-            statfile.write( str(loc_error))
             statfile.write("\n")
 
             statfile.write("classification error : ")
@@ -80,7 +70,11 @@ for iou_i in IoUList:
             statfile.write(str(gtNumDefects))
             statfile.write("\n")
 
-            precision = 1.0 * correct / (loc_error + cls_error + correct)
+            statfile.write("prediction data : ")
+            statfile.write(str(predNumDefects))
+            statfile.write("\n")
+
+            precision = 1.0 * correct / (np.sum(predNumDefects))
             recall = 1.0 * correct / (np.sum(gtNumDefects))
             F1 = 2.0 * recall * precision / (recall + precision)
 
@@ -108,7 +102,6 @@ for iou_i in IoUList:
 
     # Plot PR curve
     # Plotting Results
-    # import matplotlib.pyplot as plt
     fignow = plt.figure()
     plt.plot( Rlist, Plist, marker='o', markerfacecolor='red', markersize=12, color='skyblue', linewidth=4, label='precision')
     plt.title("PR Curve")
