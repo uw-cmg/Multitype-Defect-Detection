@@ -7,16 +7,16 @@ Images with Deep Learning](https://github.com/uw-cmg/Multitype-Defect-Detection)
 
 After install [ChianerCV](https://chainercv.readthedocs.io/en/stable/), you can train and test the codes with the following comands:
 
-'''bash
+```bash
 
 python train_multi_defect.py
 
-'''
+```
 
+To test the weights, you need to change the path of weight in the `test_multi_defect.py` to check the performance.
 
-
-'''bash
+```bash
 
 python test_multi_defect.py
 
-'''
+```
