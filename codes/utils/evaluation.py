@@ -82,7 +82,7 @@ def bbox_iou(a, b):
 
 def evaluate_set_by_iou_kinds(model, dataset,bbox_label_names = ('0'), threshold=0.5,threshold_IoU = 0.5):
     """Calculate the performance of the model by IoU metrics and different kinds of labels
-
+    
     Args:
         model: the Faster R-CNN model
         dastaset: testing dataset
@@ -98,9 +98,11 @@ def evaluate_set_by_iou_kinds(model, dataset,bbox_label_names = ('0'), threshold
     model.score_thresh = threshold
     correct = 0
     cls_error = 0
+    loc_error = 0
     gtNumDefects = np.zeros(shape=(1, len(bbox_label_names)))
-    predNumDefects = np.zeros(shape=(1, len(bbox_label_names)))
     confMatrix= np.zeros(shape=(len(bbox_label_names), len(bbox_label_names)))
+    area_loc_error_list = list()
+    cls_error_size_list = list()
     for instance in dataset:
         img, gt_bboxes, gt_labels = instance
         pred_bboxes, pred_labels, pred_scores = model.predict([img])
@@ -109,42 +111,29 @@ def evaluate_set_by_iou_kinds(model, dataset,bbox_label_names = ('0'), threshold
         gt_bboxes = gt_bboxes.tolist()
         for k in range(0,len(gt_bboxes)):
             gtNumDefects[0,gt_labels[k]] += 1
-
-        for y in range(0,len(pred_bboxes)):
-            predNumDefects[0,pred_labels[0][y]] += 1
         #pred_labels = pred_labels.tolist()
         gt_labels = gt_labels.tolist()
-
-        # get useful variables
-        nums_pred = len(pred_bboxes)
-        nums_gt = len(gt_bboxes)
-        iou_matrix = np.zeros((nums_pred,nums_gt))
-
-        for i in range(nums_pred):
-            for j in range(nums_gt):
-                iou_matrix[i][j] = bbox_iou(pred_bboxes[i],gt_bboxes[j])
-        #print(iou_matrix)
-
-
-        while np.any(iou_matrix > threshold_IoU):
-            ind = np.argmax(iou_matrix)
-            ind_col = ind % nums_gt
-            ind_row = (ind - ind_col) // nums_gt
-            #print("row = %d, col = %d"%(ind_row, ind_col))
-            # store results for more analysis
-            #res.append([predict[ind_row], truth[ind_col]])
-            confMatrix[pred_labels[0][ind_row]][gt_labels[ind_col]] += 1
-            if gt_labels[ind_col] == pred_labels[0][ind_row]:
-                correct += 1
-            else:
-                cls_error += 1
-            # set the correspoding row and col to zero
-            # exclude those already paired from future comparsion
-            iou_matrix[ind_row][:] = 0
-            # set col to 0
-            for ii in range(nums_pred):
-                iou_matrix[ii][ind_col] = 0
-    return correct, cls_error, confMatrix, gtNumDefects, predNumDefects
+        # for each predicted bbox
+        for i in range(0,len(pred_bboxes)):
+            tmpIoU_list = []
+            for j in range(0,len(gt_bboxes)):
+                tmpIoU_list.append(bbox_iou(pred_bboxes[i],gt_bboxes[j]))
+            # After go through all the gt bbox
+            # check whether any IoU > threshold_IoU
+            tmpIoU_list_loc_true = [ x for x in tmpIoU_list if x >= threshold_IoU]
+            if len(tmpIoU_list_loc_true) >= 1:
+                # find the maximum index of this item this follows the NMS convention
+                maxpos = tmpIoU_list.index(max(tmpIoU_list))
+                # if label matched
+                confMatrix[pred_labels[0][i]][gt_labels[maxpos]] += 1
+                if gt_labels[maxpos] == pred_labels[0][i]:
+                    correct += 1
+                else:
+                    cls_error += 1
+            else: # no IoU > threshold_IoU found
+                loc_error += 1
+                area_loc_error_list.append((pred_labels[0][i],bbox_area(pred_bboxes[i])))
+    return correct, cls_error,loc_error,confMatrix,area_loc_error_list,gtNumDefects
 
 
 def analyze_and_fitting(model, dataset, threshold=0.5, use_gpu=True):

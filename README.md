@@ -1,8 +1,22 @@
 # multitype-defect-detection
 
-Durning 2018 Summer, with the help of [ Citrine NextGen fellows in Summer 2018](http://matmodel.engr.wisc.edu/prof-dane-morgan-and-mingren-shen-proud-to-host-9-nextgen-scholars-in-summer-2018/),
-we improve the single type detector model developed in our group([Li, Wei, Kevin G. Field, and Dane Morgan. "Automated defect analysis in electron microscopic images." npj Computational Materials 4.1 (2018): 36.](https://www.nature.com/articles/s41524-018-0093-8)) to three types of defects to further demonstrate the ability of the current model.
+This is the code written in [ChianerCV](https://chainercv.readthedocs.io/en/stable/) to do multitype defect detection for TEM images. And it is the code used for our paper [Multi Defect Detection and Analysis of Electron Microscopy 
+Images with Deep Learning](https://github.com/uw-cmg/Multitype-Defect-Detection) (URL will be updated after publising). 
+
+# Usuage
+
+After install [ChianerCV](https://chainercv.readthedocs.io/en/stable/), you can train and test the codes with the following comands:
+
+'''bash
+
+python train_multi_defect.py
+
+'''
 
 
-## [ThreeTypes](https://github.com/uw-cmg/multitype-defect-detection/tree/master/ThreeTypes)
-codes to detect three types of defects : 111 loops, 100 loops, and black dots.
+
+'''bash
+
+python test_multi_defect.py
+
+'''

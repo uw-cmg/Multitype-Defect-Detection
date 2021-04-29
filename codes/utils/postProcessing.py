@@ -4,15 +4,28 @@ from skimage import exposure, morphology, measure, draw
 from skimage.filters import threshold_yen, threshold_minimum, threshold_otsu, gaussian, threshold_adaptive
 from skimage.measure import label,find_contours
 from skimage.filters import rank
+from skimage.filters import median
+from scipy import ndimage
 from skimage.morphology import disk
 from .visualization import vis_image
 from skimage import exposure, morphology, measure, draw
 from skimage.morphology import remove_small_objects,closing
+from matplotlib.patches import Ellipse
 # from utils.postProcessing import img_ellipse_fitting, flood_fitting, binary_threshold_fitting
+import os
+
+from skimage.morphology import disk
+from .visualization import vis_image
+from utils.imageUtils import cropImage
+from skimage import exposure, morphology, measure, draw
+from skimage.morphology import remove_small_objects,closing
+# from utils.postProcessing import img_ellipse_fitting, flood_fitting, binary_threshold_fitting
+
 import numpy as np
 import matplotlib.pyplot as plt
 import math
 import matplotlib.patches as patches
+import cv2
 
 
 def watershed_image(img):
@@ -64,6 +77,8 @@ def watershed_image_100(img):
     img1 = exposure.equalize_hist(img_gray)
     # invert the image
     img2 = np.max(img1) - img1
+    img2 = median(img2)
+    #img2 = ndimage.gaussian_filter(img2,0.2) #median_filter(img2, 50)
     inner = np.zeros((h, w), np.bool)
     centroid = [round(a) for a in findCentroid(img2)]
     inner[ int(centroid[0]), int(centroid[1])] = 1
@@ -77,8 +92,8 @@ def watershed_image_100(img):
     out[0, w - 1] = 1
     out[h - 1, w - 1] = 1
     out = morphology.dilation(out, kernel)
-    out[0, :] = 1
-    out[h - 1, :] = 1
+    #out[0, :] = 1
+    #out[h - 1, :] = 1
     #out[:, w - 1] = 1
     #out[:, 0] = 1
 
@@ -103,6 +118,11 @@ def flood_fitting_100(img):
     results = measure.regionprops(labels - 1)
     sorted(results, key=lambda k: k['area'],reverse=True)
     # return the one with largest area
+    # if len(results) == 1:
+    #     return results[0]
+    # else:
+    #     return results[1]
+
     return results[0]
 
 
@@ -118,8 +138,8 @@ def watershed_image_blackdot(img):
     # invert the image
     img2 = np.max(img1) - img1
     inner = np.zeros((h, w), np.bool)
-    centroid = [round(a) for a in findCentroid(img2)]
-    inner[ int(centroid[0]), int(centroid[1])] = 1
+    # centroid = [round(a) for a in findCentroid(img2)]
+    # inner[ int(centroid[0]), int(centroid[1])] = 1
     min_size = round((h + w) / 4 )
     kernel = morphology.disk(min_size)
     inner = morphology.binary_dilation(inner, kernel)
@@ -197,6 +217,7 @@ def show_fitted_ellipse(img):
     plt.imshow(img[1,:,:], cmap='gray')
     plt.plot(cc, rr, '.')
 
+
 def img_ellipse_fitting(img, bboxes):
     subimages, bboxes = cropImage(img, bboxes)
     y_points = np.array([])
@@ -255,7 +276,7 @@ def binary_threshold_fitting_100(image):
     # img1 = exposure.equalize_hist(img_gray)
     # # invert the image
     # img2 = np.max(img1) - img1
-    # print(img1.shape)
+    print(img1.shape)
 
     #thresh = threshold_yen( img1 )
     #thresh = threshold_otsu(img_gray)
@@ -737,3 +758,271 @@ def img_ellipse_fitting_3kinds_Fig3(img, bboxes, labels, ax = None):
     ax.scatter(x_points_1, y_points_1, s=1, alpha=0.5, c='b')
     ax.scatter(x_points_2, y_points_2, s=1, alpha=0.5, c='y')
     return ax
+
+def img_ellipse_fitting_3kinds_stat_convert_debug_OutPut(img, bboxes, labels, convFactor,index, Results):
+    # Creating the storing folder
+    try:
+        os.mkdir("Results_"+str(index))
+        print(index)
+    except OSError:
+        print("Creation of the directory is failed")
+    #imageSize = img[0, :, :]
+    subimages, bboxes = cropImage(img, bboxes)
+    y_points_0 = np.array([])
+    x_points_0 = np.array([])
+    y_points_1 = np.array([])
+    x_points_1 = np.array([])
+    y_points_2 = np.array([])
+    x_points_2 = np.array([])
+    rectList = list()
+    subImgID = 0
+    for subim, bbox, label in zip(subimages, bboxes, labels):
+        plt.figure()
+        ax = plt.gca()
+        # Saving subImg Original for Proprocessing
+        plt.imshow(subim.transpose((1, 2, 0))[:, :, 0], cmap='gray')
+        plt.axis('off')
+        plt.savefig("Results_"+str(index)+"/"+str(subImgID)+".jpg",dpi=300,bbox_inches='tight')
+        plt.clf()       
+        # 111 Loops
+        if label == 0:
+            region1 = flood_fitting(subim)
+            result = (int(region1['centroid'][0] + bbox[0]), int(region1['centroid'][1] + bbox[1]),
+                      int(region1['minor_axis_length'] / 2), int(region1['major_axis_length'] / 2),
+                      -region1['orientation'])
+            # Saving Fitting
+            ellipse = Ellipse(xy=(region1['centroid'][0], region1['centroid'][1]), width=region1['minor_axis_length'] / 2.0, height=region1['major_axis_length'] / 2.0, 
+                        angle = -180.0*region1['orientation'], edgecolor='r', fc='None', lw=2)
+            plt.figure()
+            ax = plt.gca()
+            # Saving subImg Original for Proprocessing
+            plt.imshow(subim.transpose((1, 2, 0))[:, :, 0], cmap='gray')
+            plt.axis('off')
+            #plt.savefig("Results_"+str(index)+"/"+str(subImgID)+".jpg",dpi=300,bbox_inches='tight')   
+            ax.add_patch(ellipse)
+            plt.savefig("Results_"+str(index)+"/"+str(subImgID)+"_Fitted_111"+".jpg",dpi=300,bbox_inches='tight')
+            plt.clf()
+            rr, cc = draw.ellipse_perimeter(*result)
+            y_points_0 = np.concatenate((y_points_0, rr))
+            x_points_0 = np.concatenate((x_points_0, cc))
+            Results[0].append( (region1['minor_axis_length'] * convFactor, region1['major_axis_length'] * convFactor) )
+        # Black Dots
+        if label == 1:
+            region1 = flood_fitting_blackdot(subim)
+            # Saving Fitting
+            ellipse = Ellipse(xy=(region1['centroid'][0], region1['centroid'][1]), width=region1['minor_axis_length'] / 2.0, height=region1['major_axis_length'] / 2.0, 
+                        angle = -180.0*region1['orientation'], edgecolor='r', fc='None', lw=2)
+            plt.figure()
+            ax = plt.gca()
+            plt.imshow(subim.transpose((1, 2, 0))[:, :, 0], cmap='gray')
+            plt.axis('off')
+            #plt.savefig("Results_"+str(index)+"/"+str(subImgID)+".jpg",dpi=300,bbox_inches='tight')   
+            ax.add_patch(ellipse)
+            plt.savefig("Results_"+str(index)+"/"+str(subImgID)+"_Fitted_BD"+".jpg",dpi=300,bbox_inches='tight')
+            plt.clf()
+            # Ending Saving Fitting
+            result = (int(region1['centroid'][0] + bbox[0]), int(region1['centroid'][1] + bbox[1]),
+                      int(region1['minor_axis_length'] / 2), int(region1['major_axis_length'] / 2),
+                      -region1['orientation'])
+            rr, cc = draw.ellipse_perimeter(*result)
+            y_points_1 = np.concatenate((y_points_1, rr))
+            x_points_1 = np.concatenate((x_points_1, cc))
+            Results[1].append( (region1['minor_axis_length'] * convFactor, region1['major_axis_length'] * convFactor) )
+
+        # 100 Loops
+        if label == 2:
+            curr_bbox = ( bbox[2] - bbox[0], bbox[3] - bbox[1] )
+            MinMaxRatio = 1.0 * np.max(curr_bbox) / np.min(curr_bbox)
+            if MinMaxRatio < 1.4:
+                region1 = flood_fitting_100(subim)
+                # Saving Fitting
+                ellipse = Ellipse(xy=(region1['centroid'][0], region1['centroid'][1]), width=region1['minor_axis_length'] / 2.0, height=region1['major_axis_length'] / 2.0, 
+                            angle = -180.0*region1['orientation'], edgecolor='r', fc='None', lw=2)
+                plt.figure()
+                ax = plt.gca()
+                plt.imshow(subim.transpose((1, 2, 0))[:, :, 0], cmap='gray')
+                plt.axis('off')
+                #plt.savefig("Results_"+str(index)+"/"+str(subImgID)+".jpg",dpi=300,bbox_inches='tight')   
+                ax.add_patch(ellipse)
+                plt.savefig("Results_"+str(index)+"/"+str(subImgID)+"_Fitted_100"+".jpg",dpi=300,bbox_inches='tight')
+                plt.clf()
+                # Ending Saving Fitting
+                result = (int(region1['centroid'][0] + bbox[0]), 
+                          int( region1['centroid'][1] + bbox[1]),
+                          int( 0.95 * region1['minor_axis_length'] / 2), 
+                          int( 0.95 * region1['major_axis_length'] / 2),
+                          -region1['orientation'])
+                rr, cc = draw.ellipse_perimeter(*result)
+                try :
+                    y_points_2 = np.concatenate((y_points_2, rr))
+                    x_points_2 = np.concatenate((x_points_2, cc))
+                    Results[2].append( (region1['minor_axis_length'] * convFactor, region1['major_axis_length'] * convFactor) )
+                except:
+                    print("Using Rectangle to Fix 100 in %d"%index)
+                    # record down information of bounding boxes
+                    rectList.append(
+                        patches.Rectangle(
+                            (bbox[1], bbox[2]),
+                            np.abs(bbox[3] - bbox[1]),
+                            np.abs(bbox[2] - bbox[0]),
+                            fill=False, 
+                            linewidth = 4,
+                            edgecolor = "olive"))
+                    Results[2].append( ( np.abs(bbox[3] - bbox[1]) * convFactor, np.abs(bbox[2] - bbox[0]) * convFactor) )
+            else:
+                region1 = binary_threshold_fitting_100(subim)
+                result = (int(region1['centroid'][0]+ bbox[0] ), int(region1['centroid'][1]+ bbox[1] ),
+                        int( region1['minor_axis_length'] / 2), int( region1['major_axis_length'] / 2),
+                        -region1['orientation'])
+                rr,cc = draw.ellipse_perimeter(*result)
+                # Saving Fitting
+                ellipse = Ellipse(xy=(region1['centroid'][0], region1['centroid'][1]), width=region1['minor_axis_length'] / 2.0, height=region1['major_axis_length'] / 2.0, 
+                            angle = -180.0*region1['orientation'], edgecolor='r', fc='None', lw=2)
+                plt.figure()
+                ax = plt.gca()
+                plt.imshow(subim.transpose((1, 2, 0))[:, :, 0], cmap='gray')
+                plt.axis('off')
+                #plt.savefig("Results_"+str(index)+"/"+str(subImgID)+".jpg",dpi=300,bbox_inches='tight')   
+                ax.add_patch(ellipse)
+                plt.savefig("Results_"+str(index)+"/"+str(subImgID)+"_Fitted_100"+".jpg",dpi=300,bbox_inches='tight')
+                plt.clf()
+                # Ending Saving Fitting
+                #print(rr.shape,cc.shape)
+                try :
+                    y_points_2 = np.concatenate((y_points_2,rr))
+                    x_points_2 = np.concatenate((x_points_2,cc))
+                    Results[2].append( (region1['minor_axis_length'] * convFactor, region1['major_axis_length'] * convFactor) )
+                except :
+                    print("Using Rectangle to Fix 100 in %d"%index)
+                    # record down information of bounding boxes
+                    rectList.append(
+                        patches.Rectangle(
+                            (bbox[1], bbox[2]),
+                            np.abs(bbox[3] - bbox[1]),
+                            np.abs(bbox[2] - bbox[0]),
+                            fill=False, 
+                            linewidth = 4,
+                            edgecolor = "green"))
+                    Results[2].append( ( np.abs(bbox[3] - bbox[1]) * convFactor, np.abs(bbox[2] - bbox[0]) * convFactor) )
+        subImgID += 1
+    fig = plt.figure(figsize=(10, 10))
+    ax = fig.add_subplot(111, aspect='equal')
+    plt.imshow(img[0, :, :], cmap='gray')
+    plt.scatter(x_points_0, y_points_0, s=(1 * 72. / fig.dpi) ** 2, alpha=0.5, c='r')
+    plt.scatter(x_points_1, y_points_1, s=(1 * 72. / fig.dpi) ** 2, alpha=0.5, c='b')
+    plt.scatter(x_points_2, y_points_2, s=(1 * 72. / fig.dpi) ** 2, alpha=0.5, c='y')
+    # Plot missing green rectangle
+    for p in rectList:
+        ax.add_patch(p)
+    plt.savefig(str(index)+".jpg",dpi=150,bbox_inches='tight')
+    plt.clf()
+
+def img_ellipse_fitting_3kinds_stat_convert_debug_OutPut_OpenCV(img, bboxes, labels, convFactor,index, Results):
+    # Creating the storing folder
+    try:
+        os.mkdir("Results_"+str(index))
+        print(index)
+    except OSError:
+        print("Creation of the directory is failed")
+    #imageSize = img[0, :, :]
+    subimages, bboxes = cropImage(img, bboxes)
+    y_points_0 = np.array([])
+    x_points_0 = np.array([])
+    y_points_1 = np.array([])
+    x_points_1 = np.array([])
+    y_points_2 = np.array([])
+    x_points_2 = np.array([])
+    rectList = list()
+    subImgID = 0
+    for subim, bbox, label in zip(subimages, bboxes, labels):
+        plt.figure()
+        ax = plt.gca()
+        # Saving subImg Original for Proprocessing
+        plt.imshow(subim.transpose((1, 2, 0))[:, :, 0], cmap='gray')
+        plt.axis('off')
+        plt.savefig("Results_"+str(index)+"/"+str(subImgID)+".jpg",dpi=300,bbox_inches='tight')
+        plt.clf()       
+        # 111 Loops
+        if label == 0:
+            region1 = flood_fitting(subim)
+            result = (int(region1['centroid'][0] + bbox[0]), int(region1['centroid'][1] + bbox[1]),
+                      int(region1['minor_axis_length'] / 2), int(region1['major_axis_length'] / 2),
+                      -region1['orientation'])
+            # Saving Fitting
+            ellipse = Ellipse(xy=(region1['centroid'][0], region1['centroid'][1]), width=region1['minor_axis_length'] / 2.0, height=region1['major_axis_length'] / 2.0, 
+                        angle = 180.0*region1['orientation'], edgecolor='r', fc='None', lw=2)
+            plt.figure()
+            ax = plt.gca()
+            # Saving subImg Original for Proprocessing
+            plt.imshow(subim.transpose((1, 2, 0))[:, :, 0], cmap='gray')
+            plt.axis('off')
+            #plt.savefig("Results_"+str(index)+"/"+str(subImgID)+".jpg",dpi=300,bbox_inches='tight')   
+            ax.add_patch(ellipse)
+            plt.savefig("Results_"+str(index)+"/"+str(subImgID)+"_Fitted_111"+".jpg",dpi=300,bbox_inches='tight')
+            plt.clf()
+            rr, cc = draw.ellipse_perimeter(*result)
+            y_points_0 = np.concatenate((y_points_0, rr))
+            x_points_0 = np.concatenate((x_points_0, cc))
+            Results[0].append( (region1['minor_axis_length'] * convFactor, region1['major_axis_length'] * convFactor) )
+        # Black Dots
+        if label == 1:
+            region1 = flood_fitting_blackdot(subim)
+            # Saving Fitting
+            ellipse = Ellipse(xy=(region1['centroid'][0], region1['centroid'][1]), width=region1['minor_axis_length'] / 2.0, height=region1['major_axis_length'] / 2.0, 
+                        angle = 180.0*region1['orientation'], edgecolor='r', fc='None', lw=2)
+            plt.figure()
+            ax = plt.gca()
+            plt.imshow(subim.transpose((1, 2, 0))[:, :, 0], cmap='gray')
+            plt.axis('off')
+            #plt.savefig("Results_"+str(index)+"/"+str(subImgID)+".jpg",dpi=300,bbox_inches='tight')   
+            ax.add_patch(ellipse)
+            plt.savefig("Results_"+str(index)+"/"+str(subImgID)+"_Fitted_BD"+".jpg",dpi=300,bbox_inches='tight')
+            plt.clf()
+            # Ending Saving Fitting
+            result = (int(region1['centroid'][0] + bbox[0]), int(region1['centroid'][1] + bbox[1]),
+                      int(region1['minor_axis_length'] / 2), int(region1['major_axis_length'] / 2),
+                      -region1['orientation'])
+            rr, cc = draw.ellipse_perimeter(*result)
+            y_points_1 = np.concatenate((y_points_1, rr))
+            x_points_1 = np.concatenate((x_points_1, cc))
+            Results[1].append( (region1['minor_axis_length'] * convFactor, region1['major_axis_length'] * convFactor) )
+
+        # 100 Loops
+        if label == 2:
+            region1 = binary_threshold_fitting_100(subim)#flood_fitting_100(subim)#flood_Fitting_100_openCV(subim)
+            # Saving Fitting
+            ellipse = Ellipse(xy=(region1['centroid'][0], region1['centroid'][1]), width=region1['minor_axis_length'] / 2.0, height=region1['major_axis_length'] / 2.0, 
+                        angle = 180.0*region1['orientation'], edgecolor='r', fc='None', lw=2)
+            plt.figure()
+            ax = plt.gca()
+            plt.imshow(subim.transpose((1, 2, 0))[:, :, 0], cmap='gray')
+            plt.axis('off')
+            #plt.savefig("Results_"+str(index)+"/"+str(subImgID)+".jpg",dpi=300,bbox_inches='tight')   
+            ax.add_patch(ellipse)
+            plt.savefig("Results_"+str(index)+"/"+str(subImgID)+"_Fitted_100"+".jpg",dpi=300,bbox_inches='tight')
+            plt.clf()
+            # Ending Saving Fitting
+            result = (int(region1['centroid'][0] + bbox[0]), 
+                        int( region1['centroid'][1] + bbox[1]),
+                        int( region1['minor_axis_length'] / 2), 
+                        int( region1['major_axis_length'] / 2),
+                        region1['orientation'])
+            rr, cc = draw.ellipse_perimeter(*result)
+            print(len(y_points_2))
+            print(len(rr))
+            print(len(cc))
+            y_points_2 = np.concatenate((y_points_2,rr))
+            x_points_2 = np.concatenate((x_points_2,cc))
+            Results[2].append( (region1['minor_axis_length'] * convFactor, region1['major_axis_length'] * convFactor) )
+        subImgID += 1
+    fig = plt.figure(figsize=(10, 10))
+    ax = fig.add_subplot(111, aspect='equal')
+    plt.imshow(img[0, :, :], cmap='gray')
+    plt.scatter(x_points_0, y_points_0, s=(1 * 72. / fig.dpi) ** 2, alpha=0.5, c='r')
+    plt.scatter(x_points_1, y_points_1, s=(1 * 72. / fig.dpi) ** 2, alpha=0.5, c='b')
+    plt.scatter(x_points_2, y_points_2, s=(1 * 72. / fig.dpi) ** 2, alpha=0.5, c='y')
+    # Plot missing green rectangle
+    for p in rectList:
+        ax.add_patch(p)
+    plt.savefig(str(index)+".jpg",dpi=150,bbox_inches='tight')
+    plt.clf()
