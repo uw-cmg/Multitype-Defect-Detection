@@ -1,7 +1,7 @@
 # multitype-defect-detection
 
 This is the code written in [ChianerCV](https://chainercv.readthedocs.io/en/stable/) to do multitype defect detection for TEM images. And it is the code used for our paper [Multi Defect Detection and Analysis of Electron Microscopy 
-Images with Deep Learning](https://github.com/uw-cmg/Multitype-Defect-Detection) (URL will be updated after publising). 
+Images with Deep Learning](https://doi.org/10.1016/j.commatsci.2021.110576). 
 
 # Usuage
 
